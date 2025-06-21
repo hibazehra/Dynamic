@@ -1,0 +1,1541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Gallery</title>
+    <!-- Load external dependencies first -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/CustomEase.min.js"></script>
+    <script src="https://unpkg.com/split-type@0.3.4/index.js"></script>
+    <script src="https://cdn.skypack.dev/tweakpane@4.0.4" type="module"></script>
+</head>
+<style>
+    @import url("https://fonts.cdnfonts.com/css/thegoodmonolith");
+
+@font-face {
+  src: url("https://fonts.cdnfonts.com/css/pp-neue-montreal") format("woff2");
+  font-family: "PP Neue Montreal", sans-serif;
+  font-weight: 400;
+}
+
+:root {
+  --spacing-base: 1rem;
+  --spacing-md: 1.5rem;
+  --spacing-lg: 2rem;
+  --color-text: #ffffff;
+  --color-text-dim: 0.6;
+  --transition-medium: 0.3s ease;
+  --font-size-base: 14px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  user-select: none;
+}
+
+body {
+  font-family: "PP Neue Montreal", sans-serif;
+  background-color: #000000;
+  color: #ffffff;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Animated noise effect */
+body::before {
+  content: "";
+  position: fixed;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: transparent
+    url("http://assets.iceable.com/img/noise-transparent.png") repeat 0 0;
+  background-size: 300px 300px;
+  animation: noise-animation 0.3s steps(5) infinite;
+  opacity: 0.9;
+  will-change: transform;
+  z-index: 100;
+  pointer-events: none;
+}
+
+@keyframes noise-animation {
+  0% {
+    transform: translate(0, 0);
+  }
+
+  10% {
+    transform: translate(-2%, -3%);
+  }
+
+  20% {
+    transform: translate(-4%, 2%);
+  }
+
+  30% {
+    transform: translate(2%, -4%);
+  }
+
+  40% {
+    transform: translate(-2%, 5%);
+  }
+
+  50% {
+    transform: translate(-4%, 2%);
+  }
+
+  60% {
+    transform: translate(3%, 0);
+  }
+
+  70% {
+    transform: translate(0, 3%);
+  }
+
+  80% {
+    transform: translate(-3%, 0);
+  }
+
+  90% {
+    transform: translate(2%, 2%);
+  }
+
+  100% {
+    transform: translate(1%, 0);
+  }
+}
+
+.coordinates-section {
+  grid-column: 1 / span 3;
+  font-family: "TheGoodMonolith", monospace;
+}
+
+/* Key hint styling */
+.key-hint {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  border: 1px solid var(--color-text);
+  border-radius: 3px;
+  font-size: 12px;
+  margin: 0 3px;
+  min-width: 20px;
+  height: 20px;
+}
+
+/* Footer text styling */
+.footer p {
+  font-family: "TheGoodMonolith", monospace;
+}
+
+/* Global link styling */
+a {
+  position: relative;
+  cursor: pointer;
+  color: var(--color-text);
+  padding: 0;
+  display: inline-block;
+  z-index: 1;
+  text-decoration: none;
+  font-size: var(--font-size-base);
+  opacity: 1;
+  transition: color var(--transition-medium);
+  font-weight: 700;
+}
+
+a::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 100%;
+  background-color: var(--color-text);
+  z-index: -1;
+  transition: width 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+a:hover::after,
+.links span:hover::after {
+  width: 100%;
+}
+
+a:hover,
+.links span:hover {
+  color: black;
+  mix-blend-mode: difference;
+  opacity: 1;
+}
+
+p {
+  display: block;
+  text-decoration: none;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01rem;
+  -webkit-font-smoothing: antialiased;
+}
+
+ul {
+  list-style: none;
+}
+
+h3 {
+  font-size: 14px;
+  margin-bottom: var(--spacing-base);
+  font-weight: 600;
+}
+
+/* Header and Footer */
+.header,
+.footer {
+  position: absolute;
+  left: 0;
+  width: 100vw;
+  padding: 1.5rem;
+  z-index: 10000;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  column-gap: var(--spacing-base);
+}
+
+.header {
+  top: 0;
+}
+
+.footer {
+  bottom: 0;
+}
+
+/* Grid column assignments */
+.nav-section {
+  grid-column: 1 / span 3;
+}
+
+.values-section {
+  grid-column: 5 / span 2;
+}
+
+.location-section {
+  grid-column: 7 / span 2;
+}
+
+.contact-section {
+  grid-column: 9 / span 2;
+}
+
+.social-section {
+  grid-column: 11 / span 2;
+  text-align: right;
+}
+
+/* Bottom bar */
+.coordinates-section {
+  grid-column: 1 / span 3;
+}
+
+.links-section {
+  grid-column: 5 / span 4;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--spacing-base);
+}
+
+.info-section {
+  grid-column: 9 / span 4;
+  text-align: right;
+}
+
+/* ===== LOGO COMPONENT ===== */
+.logo-container {
+  margin-bottom: var(--spacing-md);
+  display: block;
+  width: 3rem;
+  height: 1.5rem;
+  position: relative;
+}
+
+.logo-circles {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.circle {
+  position: absolute;
+  border-radius: 50%;
+  transition: transform var(--transition-medium);
+  width: 1.4rem;
+  height: 1.4rem;
+  background-color: var(--color-text);
+  top: 50%;
+}
+
+.circle-1 {
+  left: 0;
+  transform: translate(0, -50%);
+}
+
+.circle-2 {
+  left: 0.8rem;
+  transform: translate(0, -50%);
+  mix-blend-mode: exclusion;
+}
+
+.logo-container:hover .circle-1 {
+  transform: translate(-0.5rem, -50%);
+}
+
+.logo-container:hover .circle-2 {
+  transform: translate(0.5rem, -50%);
+}
+
+.container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  cursor: grab;
+}
+
+.canvas {
+  position: absolute;
+  will-change: transform;
+}
+
+.item {
+  position: absolute;
+  overflow: hidden;
+  background-color: #000000;
+  cursor: pointer;
+  border-radius: var(--border-radius, 0px);
+}
+
+.item-image-container {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.item-image-container::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 var(--vignette-size, 0px) rgba(0, 0, 0, 0.5);
+  z-index: 1;
+}
+
+.item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  transition: transform 0.3s ease;
+}
+
+.item:hover img {
+  transform: scale(var(--hover-scale, 1.05));
+}
+
+.item-caption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 10px;
+  z-index: 2;
+}
+
+/* Project title needs to be above everything */
+.project-title {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  text-align: center;
+  pointer-events: none;
+  z-index: 10002;
+  /* Increased to be above expanded-item */
+}
+
+.project-title p {
+  position: relative;
+  height: 42px;
+  color: #ffffff;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%);
+  overflow: hidden;
+}
+
+.project-title p .word {
+  position: relative;
+  display: inline-block;
+  font-family: "PP Neue Montreal", sans-serif;
+  font-size: 36px;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  transform: translateY(0%);
+  will-change: transform;
+}
+
+.item-name {
+  font-family: "PP Neue Montreal", sans-serif;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: -0.03em;
+  margin-bottom: 2px;
+  position: relative;
+  overflow: hidden;
+  height: 16px;
+}
+
+.item-name .word {
+  position: relative;
+  display: inline-block;
+  will-change: transform;
+}
+
+.item-number {
+  font-family: "TheGoodMonolith", monospace;
+  color: #888888;
+  font-size: 10px;
+  font-weight: 400;
+  position: relative;
+  overflow: hidden;
+  height: 14px;
+}
+
+.item-number .char {
+  position: relative;
+  display: inline-block;
+  will-change: transform;
+}
+
+/* Expanded item should be above overlay but below titles and captions */
+.expanded-item {
+  position: fixed;
+  z-index: 10000;
+  /* Lower than project-title and caption-clone */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #000000;
+  overflow: hidden;
+  cursor: pointer;
+  border-radius: var(--border-radius, 0px);
+}
+
+.expanded-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #000000;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 9999;
+  /* Below expanded-item but above other content */
+}
+
+.overlay.active {
+  pointer-events: auto;
+}
+
+/* Page vignette effect */
+.page-vignette-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9998;
+  /* Below overlay */
+}
+
+.page-vignette {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  box-shadow: inset 0 0 var(--page-vignette-size, 0px)
+    var(--page-vignette-color, rgba(0, 0, 0, 0.9));
+}
+
+.page-vignette-strong {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  box-shadow: inset 0 0 var(--page-vignette-strong-size, 0px)
+    var(--page-vignette-strong-color, rgba(0, 0, 0, 0.95));
+}
+
+.page-vignette-extreme {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  box-shadow: inset 0 0 var(--page-vignette-extreme-size, 0px)
+    var(--page-vignette-extreme-color, rgba(0, 0, 0, 1));
+}
+
+/* Tweakpane styles */
+.tp-dfwv {
+  z-index: 10000 !important;
+}
+
+/* Make sure the Tweakpane tab is visible when collapsed */
+.tp-rotv {
+  opacity: 0.5 !important;
+}
+
+.tp-rotv.tp-rotv-expanded {
+  opacity: 1 !important;
+}
+
+.tp-rotv.tp-rotv-collapsed {
+  opacity: 0.7 !important;
+}
+
+/* Caption clone needs to be above expanded item */
+.caption-clone {
+  position: fixed;
+  z-index: 10002;
+  /* Same as project-title to be above expanded-item */
+}
+
+/* Clone styles for animation */
+.caption-clone {
+  position: fixed;
+  z-index: 10001;
+}
+
+.caption-clone .item-name,
+.caption-clone .item-number {
+  overflow: hidden;
+}
+
+</style>
+<body>
+    <div class="header">
+  <div class="nav-section">
+    <div class="logo-container">
+      <div class="logo-circles">
+        <div class="circle circle-1"></div>
+        <div class="circle circle-2"></div>
+      </div>
+    </div>
+  </div>
+
+ 
+<div class="footer">
+  <div class="coordinates-section">
+    
+  </div>
+  <div class="links-section">
+    <p>Press <span class="key-hint">H</span> to toggle panel</p>
+  </div>
+  <div class="info-section">
+   
+  </div>
+</div>
+
+<div class="container">
+  <div class="canvas" id="canvas"></div>
+  <div class="overlay" id="overlay"></div>
+</div>
+
+<div class="project-title">
+  <p></p>
+</div>
+
+<!-- Page vignette effects -->
+<div class="page-vignette-container">
+  <div class="page-vignette"></div>
+  <div class="page-vignette-strong"></div>
+  <div class="page-vignette-extreme"></div>
+</div>
+
+<script type="module">
+// Import Tweakpane
+import { Pane } from "https://cdn.skypack.dev/tweakpane@4.0.4";
+
+// Make Pane available globally
+window.Pane = Pane;
+
+// Register GSAP plugins
+gsap.registerPlugin(CustomEase);
+CustomEase.create("hop", "0.9, 0, 0.1, 1");
+
+// Project titles
+const items = [
+  "Chromatic Loopscape",
+  "Solar Bloom",
+  "Neon Handscape",
+  "Echo Discs",
+  "Void Gaze",
+  "Gravity Sync",
+  "Heat Core",
+  "Fractal Mirage",
+  "Nova Pulse",
+  "Sonic Horizon",
+  "Dream Circuit",
+  "Lunar Mesh",
+  "Radiant Dusk",
+  "Pixel Drift",
+  "Vortex Bloom",
+  "Shadow Static",
+  "Crimson Phase",
+  "Retro Cascade",
+  "Photon Fold",
+  "Zenith Flow"
+];
+
+// Image URLs - replace with your actual image URLs
+const imageUrls = [
+  "https://cdn.cosmos.so/0f164449-f65e-4584-9d62-a9b3e1f4a90a?format=jpeg",
+  "https://cdn.cosmos.so/74ccf6cc-7672-4deb-ba13-1727b7dc6146?format=jpeg",
+  "https://cdn.cosmos.so/2f49a117-05e7-4ae9-9e95-b9917f970adb?format=jpeg",
+  "https://cdn.cosmos.so/7b5340f5-b4dc-4c08-8495-c507fa81480b?format=jpeg",
+  "https://cdn.cosmos.so/f733585a-081e-48e7-a30e-e636446f2168?format=jpeg",
+  "https://cdn.cosmos.so/47caf8a0-f456-41c5-98ea-6d0476315731?format=jpeg",
+  "https://cdn.cosmos.so/f99f8445-6a19-4a9a-9de3-ac382acc1a3f?format=jpeg"
+];
+
+const container = document.querySelector(".container");
+const canvas = document.getElementById("canvas");
+const overlay = document.getElementById("overlay");
+const projectTitleElement = document.querySelector(".project-title p");
+
+// Settings object for Tweakpane
+const settings = {
+  // Item sizes
+  baseWidth: 400,
+  smallHeight: 330,
+  largeHeight: 500,
+  itemGap: 65,
+  hoverScale: 1.05,
+  expandedScale: 0.4, // Percentage of viewport width
+  dragEase: 0.075,
+  momentumFactor: 200,
+  bufferZone: 3,
+  borderRadius: 0,
+  vignetteSize: 0,
+  // Page vignette settings - simplified to two main controls
+  vignetteStrength: 0.7, // Controls opacity of all layers
+  vignetteSize: 200, // Controls size of all layers
+  // Overlay settings
+  overlayOpacity: 0.9,
+  overlayEaseDuration: 0.8,
+  // Animation durations
+  zoomDuration: 0.6 // Reduced from 1.0 to 0.6 for faster zoom
+};
+
+// Define item sizes based on settings
+let itemSizes = [
+  {
+    width: settings.baseWidth,
+    height: settings.smallHeight
+  },
+  {
+    width: settings.baseWidth,
+    height: settings.largeHeight
+  }
+];
+
+let itemGap = settings.itemGap;
+let columns = 4;
+const itemCount = items.length;
+
+// Calculate grid cell size based on the largest possible item
+let cellWidth = settings.baseWidth + settings.itemGap;
+let cellHeight =
+  Math.max(settings.smallHeight, settings.largeHeight) + settings.itemGap;
+
+let isDragging = false;
+let startX, startY;
+let targetX = 0,
+  targetY = 0;
+let currentX = 0,
+  currentY = 0;
+let dragVelocityX = 0,
+  dragVelocityY = 0;
+let lastDragTime = 0;
+let mouseHasMoved = false;
+let visibleItems = new Set();
+let lastUpdateTime = 0;
+let lastX = 0,
+  lastY = 0;
+let isExpanded = false;
+let activeItem = null;
+let activeItemId = null;
+let canDrag = true;
+let originalPosition = null;
+let expandedItem = null;
+let overlayAnimation = null;
+let titleSplit = null;
+let activeCaptionNameSplit = null;
+let activeCaptionNumberSplit = null;
+let paneInstance = null;
+
+// Initialize Tweakpane
+function initTweakpane() {
+  // Wait for Pane to be available (imported via ES module)
+  if (!window.Pane) {
+    setTimeout(initTweakpane, 100);
+    return;
+  }
+
+  // Create the pane with a title and make it visible even when collapsed
+  paneInstance = new window.Pane({
+    title: "Gallery Settings",
+    expanded: false
+  });
+
+  // Make sure the pane is visible by styling its container
+  const paneElement = paneInstance.element;
+  paneElement.style.position = "fixed";
+  paneElement.style.top = "10px";
+  paneElement.style.right = "10px";
+  paneElement.style.zIndex = "10000";
+
+  // Item size settings
+  const sizeFolder = paneInstance.addFolder({
+    title: "Item Sizes",
+    expanded: false
+  });
+
+  sizeFolder
+    .addBinding(settings, "baseWidth", {
+      min: 100,
+      max: 600,
+      step: 10
+    })
+    .on("change", updateSettings);
+
+  sizeFolder
+    .addBinding(settings, "smallHeight", {
+      min: 100,
+      max: 400,
+      step: 10
+    })
+    .on("change", updateSettings);
+
+  sizeFolder
+    .addBinding(settings, "largeHeight", {
+      min: 100,
+      max: 600,
+      step: 10
+    })
+    .on("change", updateSettings);
+
+  // Layout settings
+  const layoutFolder = paneInstance.addFolder({
+    title: "Layout",
+    expanded: false
+  });
+
+  layoutFolder
+    .addBinding(settings, "itemGap", {
+      min: 0,
+      max: 100,
+      step: 5
+    })
+    .on("change", updateSettings);
+
+  layoutFolder
+    .addBinding(settings, "bufferZone", {
+      min: 1,
+      max: 5,
+      step: 0.5
+    })
+    .on("change", updateSettings);
+
+  // Style settings
+  const styleFolder = paneInstance.addFolder({
+    title: "Style",
+    expanded: false
+  });
+
+  styleFolder
+    .addBinding(settings, "borderRadius", {
+      min: 0,
+      max: 16,
+      step: 1
+    })
+    .on("change", updateBorderRadius);
+
+  // Item vignette settings
+  const itemVignetteFolder = paneInstance.addFolder({
+    title: "Item Vignette",
+    expanded: false
+  });
+
+  itemVignetteFolder
+    .addBinding(settings, "vignetteSize", {
+      min: 0,
+      max: 50,
+      step: 1
+    })
+    .on("change", updateVignetteSize);
+
+  // Page vignette settings - simplified to two controls
+  const pageVignetteFolder = paneInstance.addFolder({
+    title: "Page Vignette",
+    expanded: false
+  });
+
+  pageVignetteFolder
+    .addBinding(settings, "vignetteStrength", {
+      min: 0,
+      max: 1,
+      step: 0.05
+    })
+    .on("change", updatePageVignette);
+
+  pageVignetteFolder
+    .addBinding(settings, "vignetteSize", {
+      min: 0,
+      max: 500,
+      step: 10
+    })
+    .on("change", updatePageVignette);
+
+  // Overlay settings
+  const overlayFolder = paneInstance.addFolder({
+    title: "Overlay Animation",
+    expanded: false
+  });
+
+  overlayFolder.addBinding(settings, "overlayOpacity", {
+    min: 0,
+    max: 1,
+    step: 0.05
+  });
+
+  overlayFolder.addBinding(settings, "overlayEaseDuration", {
+    min: 0.2,
+    max: 2,
+    step: 0.1
+  });
+
+  // Animation settings
+  const animationFolder = paneInstance.addFolder({
+    title: "Animation",
+    expanded: false
+  });
+
+  animationFolder
+    .addBinding(settings, "hoverScale", {
+      min: 1,
+      max: 1.5,
+      step: 0.05
+    })
+    .on("change", updateHoverScale);
+
+  animationFolder.addBinding(settings, "expandedScale", {
+    min: 0.2,
+    max: 0.8,
+    step: 0.05
+  });
+
+  animationFolder.addBinding(settings, "dragEase", {
+    min: 0.01,
+    max: 0.2,
+    step: 0.01
+  });
+
+  animationFolder.addBinding(settings, "momentumFactor", {
+    min: 50,
+    max: 500,
+    step: 10
+  });
+
+  animationFolder.addBinding(settings, "zoomDuration", {
+    min: 0.2,
+    max: 1.5,
+    step: 0.1
+  });
+
+  // Add a button to reset the view
+  paneInstance
+    .addButton({
+      title: "Reset View"
+    })
+    .on("click", () => {
+      targetX = 0;
+      targetY = 0;
+    });
+
+  // Add keyboard shortcut for toggling the panel
+  window.addEventListener("keydown", (e) => {
+    // Toggle panel visibility with the 'h' key
+    if (e.key === "h" || e.key === "H") {
+      togglePaneVisibility();
+    }
+  });
+}
+
+// Function to toggle the panel visibility
+function togglePaneVisibility() {
+  if (!paneInstance) return;
+
+  const element = paneInstance.element;
+  if (element.style.display === "none") {
+    element.style.display = "";
+  } else {
+    element.style.display = "none";
+  }
+}
+
+// Update CSS variable for border radius
+function updateBorderRadius() {
+  document.documentElement.style.setProperty(
+    "--border-radius",
+    `${settings.borderRadius}px`
+  );
+}
+
+// Update CSS variable for item vignette
+function updateVignetteSize() {
+  document.documentElement.style.setProperty(
+    "--vignette-size",
+    `${settings.vignetteSize}px`
+  );
+}
+
+// Update CSS variable for page vignette - now using the simplified controls
+function updatePageVignette() {
+  const strength = settings.vignetteStrength;
+  const size = settings.vignetteSize;
+
+  // Regular vignette (outer layer)
+  const regularOpacity = strength * 0.7;
+  const regularSize = size * 1.5;
+  document.documentElement.style.setProperty(
+    "--page-vignette-size",
+    `${regularSize}px`
+  );
+  document.documentElement.style.setProperty(
+    "--page-vignette-color",
+    `rgba(0,0,0,${regularOpacity})`
+  );
+
+  // Strong vignette (middle layer)
+  const strongOpacity = strength * 0.85;
+  const strongSize = size * 0.75;
+  document.documentElement.style.setProperty(
+    "--page-vignette-strong-size",
+    `${strongSize}px`
+  );
+  document.documentElement.style.setProperty(
+    "--page-vignette-strong-color",
+    `rgba(0,0,0,${strongOpacity})`
+  );
+
+  // Extreme vignette (inner layer)
+  const extremeOpacity = strength;
+  const extremeSize = size * 0.4;
+  document.documentElement.style.setProperty(
+    "--page-vignette-extreme-size",
+    `${extremeSize}px`
+  );
+  document.documentElement.style.setProperty(
+    "--page-vignette-extreme-color",
+    `rgba(0,0,0,${extremeOpacity})`
+  );
+}
+
+// Update CSS variable for hover scale
+function updateHoverScale() {
+  // Use CSS variables instead of directly modifying CSS rules
+  document.documentElement.style.setProperty(
+    "--hover-scale",
+    settings.hoverScale
+  );
+
+  // Update all existing items with the new hover scale
+  document.querySelectorAll(".item").forEach((item) => {
+    const img = item.querySelector("img");
+    if (img) {
+      img.style.transition = "transform 0.3s ease";
+    }
+  });
+}
+
+// Continue from updateSettings function
+function updateSettings() {
+  // Update item sizes
+  itemSizes = [
+    {
+      width: settings.baseWidth,
+      height: settings.smallHeight
+    },
+    {
+      width: settings.baseWidth,
+      height: settings.largeHeight
+    }
+  ];
+
+  itemGap = settings.itemGap;
+  
+  // Recalculate grid cell size
+  cellWidth = settings.baseWidth + settings.itemGap;
+  cellHeight = Math.max(settings.smallHeight, settings.largeHeight) + settings.itemGap;
+  
+  // Rebuild the gallery
+  buildGallery();
+}
+
+// Build the gallery grid
+function buildGallery() {
+  canvas.innerHTML = '';
+  
+  for (let i = 0; i < itemCount; i++) {
+    const item = document.createElement('div');
+    item.className = 'item';
+    item.id = `item-${i}`;
+    
+    // Calculate grid position
+    const row = Math.floor(i / columns);
+    const col = i % columns;
+    
+    // Randomly choose size for variety
+    const sizeIndex = Math.random() > 0.6 ? 1 : 0;
+    const size = itemSizes[sizeIndex];
+    
+    // Position in grid
+    const x = col * cellWidth;
+    const y = row * cellHeight;
+    
+    // Set item properties
+    item.style.width = `${size.width}px`;
+    item.style.height = `${size.height}px`;
+    item.style.left = `${x}px`;
+    item.style.top = `${y}px`;
+    
+    // Create image container
+    const imageContainer = document.createElement('div');
+    imageContainer.className = 'item-image-container';
+    
+    // Create image
+    const img = document.createElement('img');
+    const imageIndex = i % imageUrls.length;
+    img.src = imageUrls[imageIndex];
+    img.alt = items[i];
+    
+    // Create caption
+    const caption = document.createElement('div');
+    caption.className = 'item-caption';
+    
+    const name = document.createElement('div');
+    name.className = 'item-name';
+    name.textContent = items[i];
+    
+    const number = document.createElement('div');
+    number.className = 'item-number';
+    number.textContent = `${String(i + 1).padStart(2, '0')}`;
+    
+    caption.appendChild(name);
+    caption.appendChild(number);
+    
+    imageContainer.appendChild(img);
+    item.appendChild(imageContainer);
+    item.appendChild(caption);
+    
+    // Add event listeners
+    item.addEventListener('mouseenter', () => handleItemHover(item, i));
+    item.addEventListener('mouseleave', () => handleItemLeave(item));
+    item.addEventListener('click', (e) => handleItemClick(e, item, i));
+    
+    canvas.appendChild(item);
+  }
+  
+  updateVisibility();
+}
+
+// Handle item hover
+function handleItemHover(item, index) {
+  if (isExpanded) return;
+  
+  // Update project title
+  updateProjectTitle(items[index]);
+  
+  // Split text for animation
+  const nameElement = item.querySelector('.item-name');
+  const numberElement = item.querySelector('.item-number');
+  
+  if (nameElement && !nameElement.dataset.split) {
+    new SplitType(nameElement, { types: 'words' });
+    nameElement.dataset.split = 'true';
+  }
+  
+  if (numberElement && !numberElement.dataset.split) {
+    new SplitType(numberElement, { types: 'chars' });
+    numberElement.dataset.split = 'true';
+  }
+  
+  // Animate caption in
+  gsap.fromTo(nameElement.querySelectorAll('.word'), 
+    { y: '100%' },
+    { y: '0%', duration: 0.4, stagger: 0.05, ease: 'hop' }
+  );
+  
+  gsap.fromTo(numberElement.querySelectorAll('.char'), 
+    { y: '100%' },
+    { y: '0%', duration: 0.3, stagger: 0.02, ease: 'hop' }
+  );
+}
+
+// Handle item leave
+function handleItemLeave(item) {
+  if (isExpanded) return;
+  
+  // Clear project title
+  updateProjectTitle('');
+  
+  // Animate caption out
+  const nameElement = item.querySelector('.item-name');
+  const numberElement = item.querySelector('.item-number');
+  
+  if (nameElement) {
+    gsap.to(nameElement.querySelectorAll('.word'), 
+      { y: '-100%', duration: 0.3, stagger: 0.03, ease: 'hop' }
+    );
+  }
+  
+  if (numberElement) {
+    gsap.to(numberElement.querySelectorAll('.char'), 
+      { y: '-100%', duration: 0.2, stagger: 0.01, ease: 'hop' }
+    );
+  }
+}
+
+// Handle item click
+function handleItemClick(e, item, index) {
+  if (!mouseHasMoved && canDrag) {
+    expandItem(item, index);
+  }
+}
+
+// Update project title
+function updateProjectTitle(text) {
+  projectTitleElement.textContent = text;
+  
+  if (text) {
+    if (titleSplit) titleSplit.revert();
+    titleSplit = new SplitType(projectTitleElement, { types: 'words' });
+    
+    gsap.fromTo(titleSplit.words,
+      { y: '100%' },
+      { y: '0%', duration: 0.6, stagger: 0.1, ease: 'hop' }
+    );
+  } else {
+    if (titleSplit && titleSplit.words) {
+      gsap.to(titleSplit.words,
+        { y: '-100%', duration: 0.4, stagger: 0.05, ease: 'hop' }
+      );
+    }
+  }
+}
+
+// Expand item function
+function expandItem(item, index) {
+  if (isExpanded) return;
+  
+  isExpanded = true;
+  canDrag = false;
+  activeItem = item;
+  activeItemId = index;
+  
+  // Store original position
+  const rect = item.getBoundingClientRect();
+  originalPosition = {
+    left: rect.left,
+    top: rect.top,
+    width: rect.width,
+    height: rect.height
+  };
+  
+  // Create expanded item
+  expandedItem = item.cloneNode(true);
+  expandedItem.className = 'expanded-item';
+  expandedItem.style.width = `${originalPosition.width}px`;
+  expandedItem.style.height = `${originalPosition.height}px`;
+  expandedItem.style.left = `${originalPosition.left}px`;
+  expandedItem.style.top = `${originalPosition.top}px`;
+  expandedItem.style.transform = 'none';
+  
+  document.body.appendChild(expandedItem);
+  
+  // Hide original item
+  item.style.opacity = '0';
+  
+  // Clone and position caption
+  const caption = item.querySelector('.item-caption');
+  const captionClone = caption.cloneNode(true);
+  captionClone.className = 'caption-clone';
+  captionClone.style.left = `${originalPosition.left + 10}px`;
+  captionClone.style.top = `${originalPosition.top + originalPosition.height - 50}px`;
+  captionClone.style.width = `${originalPosition.width - 20}px`;
+  
+  document.body.appendChild(captionClone);
+  
+  // Calculate expanded size
+  const expandedWidth = window.innerWidth * settings.expandedScale;
+  const expandedHeight = (expandedWidth / originalPosition.width) * originalPosition.height;
+  
+  // Animate overlay
+  overlayAnimation = gsap.to(overlay, {
+    opacity: settings.overlayOpacity,
+    duration: settings.overlayEaseDuration,
+    ease: 'power2.out'
+  });
+  overlay.classList.add('active');
+  
+  // Animate expansion
+  gsap.to(expandedItem, {
+    width: expandedWidth,
+    height: expandedHeight,
+    left: '50%',
+    top: '50%',
+    transform: 'translate(-50%, -50%)',
+    duration: settings.zoomDuration,
+    ease: 'hop',
+    onComplete: () => {
+      // Setup click to close
+      expandedItem.addEventListener('click', closeExpandedItem);
+      overlay.addEventListener('click', closeExpandedItem);
+    }
+  });
+  
+  // Animate caption
+  const captionNameClone = captionClone.querySelector('.item-name');
+  const captionNumberClone = captionClone.querySelector('.item-number');
+  
+  if (captionNameClone) {
+    activeCaptionNameSplit = new SplitType(captionNameClone, { types: 'words' });
+    gsap.fromTo(activeCaptionNameSplit.words,
+      { y: '100%' },
+      { y: '0%', duration: 0.5, stagger: 0.05, ease: 'hop', delay: 0.2 }
+    );
+  }
+  
+  if (captionNumberClone) {
+    activeCaptionNumberSplit = new SplitType(captionNumberClone, { types: 'chars' });
+    gsap.fromTo(activeCaptionNumberSplit.chars,
+      { y: '100%' },
+      { y: '0%', duration: 0.4, stagger: 0.02, ease: 'hop', delay: 0.3 }
+    );
+  }
+  
+  // Move caption to final position
+  gsap.to(captionClone, {
+    left: '50%',
+    top: '50%',
+    transform: `translate(-50%, calc(-50% + ${expandedHeight/2 - 60}px))`,
+    duration: settings.zoomDuration,
+    ease: 'hop'
+  });
+}
+
+// Close expanded item
+function closeExpandedItem() {
+  if (!isExpanded || !expandedItem) return;
+  
+  // Animate back to original position
+  gsap.to(expandedItem, {
+    width: originalPosition.width,
+    height: originalPosition.height,
+    left: originalPosition.left,
+    top: originalPosition.top,
+    transform: 'none',
+    duration: settings.zoomDuration,
+    ease: 'hop',
+    onComplete: () => {
+      // Clean up
+      if (expandedItem) {
+        expandedItem.remove();
+        expandedItem = null;
+      }
+      
+      // Show original item
+      if (activeItem) {
+        activeItem.style.opacity = '1';
+      }
+      
+      // Reset state
+      isExpanded = false;
+      canDrag = true;
+      activeItem = null;
+      activeItemId = null;
+      originalPosition = null;
+    }
+  });
+  
+  // Animate overlay out
+  if (overlayAnimation) {
+    overlayAnimation.kill();
+  }
+  gsap.to(overlay, {
+    opacity: 0,
+    duration: settings.overlayEaseDuration,
+    ease: 'power2.out',
+    onComplete: () => {
+      overlay.classList.remove('active');
+    }
+  });
+  
+  // Animate caption out and remove
+  const captionClone = document.querySelector('.caption-clone');
+  if (captionClone) {
+    if (activeCaptionNameSplit && activeCaptionNameSplit.words) {
+      gsap.to(activeCaptionNameSplit.words, {
+        y: '-100%',
+        duration: 0.3,
+        stagger: 0.03,
+        ease: 'hop'
+      });
+    }
+    
+    if (activeCaptionNumberSplit && activeCaptionNumberSplit.chars) {
+      gsap.to(activeCaptionNumberSplit.chars, {
+        y: '-100%',
+        duration: 0.2,
+        stagger: 0.01,
+        ease: 'hop'
+      });
+    }
+    
+    gsap.to(captionClone, {
+      left: originalPosition.left + 10,
+      top: originalPosition.top + originalPosition.height - 50,
+      transform: 'none',
+      duration: settings.zoomDuration,
+      ease: 'hop',
+      onComplete: () => {
+        captionClone.remove();
+        activeCaptionNameSplit = null;
+        activeCaptionNumberSplit = null;
+      }
+    });
+  }
+}
+
+// Update visibility based on viewport
+function updateVisibility() {
+  const viewportLeft = -currentX - window.innerWidth * settings.bufferZone;
+  const viewportRight = -currentX + window.innerWidth * (1 + settings.bufferZone);
+  const viewportTop = -currentY - window.innerHeight * settings.bufferZone;
+  const viewportBottom = -currentY + window.innerHeight * (1 + settings.bufferZone);
+  
+  document.querySelectorAll('.item').forEach((item, index) => {
+    const rect = item.getBoundingClientRect();
+    const itemLeft = rect.left + currentX;
+    const itemRight = itemLeft + rect.width;
+    const itemTop = rect.top + currentY;
+    const itemBottom = itemTop + rect.height;
+    
+    const isVisible = itemRight >= viewportLeft && 
+                     itemLeft <= viewportRight && 
+                     itemBottom >= viewportTop && 
+                     itemTop <= viewportBottom;
+    
+    if (isVisible && !visibleItems.has(index)) {
+      visibleItems.add(index);
+      item.style.display = 'block';
+    } else if (!isVisible && visibleItems.has(index)) {
+      visibleItems.delete(index);
+      item.style.display = 'none';
+    }
+  });
+}
+
+// Animation loop
+function animate() {
+  const now = Date.now();
+  
+  if (now - lastUpdateTime > 16) { // ~60fps
+    if (!isDragging) {
+      currentX += (targetX - currentX) * settings.dragEase;
+      currentY += (targetY - currentY) * settings.dragEase;
+    }
+    
+    canvas.style.transform = `translate(${currentX}px, ${currentY}px)`;
+    
+    if (Math.abs(currentX - lastX) > 1 || Math.abs(currentY - lastY) > 1) {
+      updateVisibility();
+      lastX = currentX;
+      lastY = currentY;
+    }
+    
+    lastUpdateTime = now;
+  }
+  
+  requestAnimationFrame(animate);
+}
+
+// Mouse/touch event handlers
+container.addEventListener('mousedown', (e) => {
+  if (!canDrag) return;
+  
+  isDragging = true;
+  mouseHasMoved = false;
+  startX = e.clientX - currentX;
+  startY = e.clientY - currentY;
+  lastDragTime = Date.now();
+  container.style.cursor = 'grabbing';
+});
+
+container.addEventListener('mousemove', (e) => {
+  if (!isDragging || !canDrag) return;
+  
+  mouseHasMoved = true;
+  const now = Date.now();
+  const deltaTime = now - lastDragTime;
+  
+  if (deltaTime > 0) {
+    const newX = e.clientX - startX;
+    const newY = e.clientY - startY;
+    
+    dragVelocityX = (newX - currentX) / deltaTime;
+    dragVelocityY = (newY - currentY) / deltaTime;
+    
+    currentX = newX;
+    currentY = newY;
+    
+    lastDragTime = now;
+  }
+});
+
+container.addEventListener('mouseup', () => {
+  if (!isDragging) return;
+  
+  isDragging = false;
+  container.style.cursor = 'grab';
+  
+  // Apply momentum
+  if (Math.abs(dragVelocityX) > 0.1 || Math.abs(dragVelocityY) > 0.1) {
+    targetX = currentX + dragVelocityX * settings.momentumFactor;
+    targetY = currentY + dragVelocityY * settings.momentumFactor;
+  } else {
+    targetX = currentX;
+    targetY = currentY;
+  }
+  
+  dragVelocityX = 0;
+  dragVelocityY = 0;
+});
+
+// Touch events
+container.addEventListener('touchstart', (e) => {
+  if (!canDrag) return;
+  
+  const touch = e.touches[0];
+  isDragging = true;
+  mouseHasMoved = false;
+  startX = touch.clientX - currentX;
+  startY = touch.clientY - currentY;
+  lastDragTime = Date.now();
+});
+
+container.addEventListener('touchmove', (e) => {
+  if (!isDragging || !canDrag) return;
+  
+  e.preventDefault();
+  mouseHasMoved = true;
+  const touch = e.touches[0];
+  const now = Date.now();
+  const deltaTime = now - lastDragTime;
+  
+  if (deltaTime > 0) {
+    const newX = touch.clientX - startX;
+    const newY = touch.clientY - startY;
+    
+    dragVelocityX = (newX - currentX) / deltaTime;
+    dragVelocityY = (newY - currentY) / deltaTime;
+    
+    currentX = newX;
+    currentY = newY;
+    
+    lastDragTime = now;
+  }
+});
+
+container.addEventListener('touchend', () => {
+  if (!isDragging) return;
+  
+  isDragging = false;
+  
+  // Apply momentum
+  if (Math.abs(dragVelocityX) > 0.1 || Math.abs(dragVelocityY) > 0.1) {
+    targetX = currentX + dragVelocityX * settings.momentumFactor;
+    targetY = currentY + dragVelocityY * settings.momentumFactor;
+  } else {
+    targetX = currentX;
+    targetY = currentY;
+  }
+  
+  dragVelocityX = 0;
+  dragVelocityY = 0;
+});
+
+// Prevent context menu
+container.addEventListener('contextmenu', (e) => {
+  e.preventDefault();
+});
+
+// Initialize everything
+function init() {
+  // Set initial CSS variables
+  updateBorderRadius();
+  updateVignetteSize();
+  updatePageVignette();
+  updateHoverScale();
+  
+  // Build gallery
+  buildGallery();
+  
+  // Start animation loop
+  animate();
+  
+  // Initialize Tweakpane
+  initTweakpane();
+}
+
+// Start when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+</body>
+</html>
+      
